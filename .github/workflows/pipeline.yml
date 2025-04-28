@@ -32,6 +32,11 @@ jobs:
       run: |
         docker run -d --name test-container -p 8080:8080 ayseknd/alistirma:testinium.v2
 
+    # Konteynerin başlatıldığını kontrol et
+    - name: Check if container is running
+      run: |
+        docker ps -a  # Tüm konteynerleri listele
+
   # İkinci job: Konteynerin başlatıldığını doğrulamak için hazır olup olmadığını kontrol et
   test_container_ready:
     runs-on: ubuntu-latest
@@ -48,8 +53,8 @@ jobs:
             exit 1
           fi
           echo "Konteyner henüz başlatılmadı, tekrar deneniyor..."
-          docker ps -a 
-          sleep 5  
+          docker ps -a  # Tüm konteynerleri listele
+          sleep 5  # 5 saniye sonra tekrar dene
           timeout=$((timeout + 5))
         done
         echo "Konteyner başarıyla başlatıldı!"
@@ -62,8 +67,8 @@ jobs:
     steps:
     - name: Test Docker Container
       run: |
-        docker ps -a  
-        docker exec test-container curl http://localhost:8080  
+        docker ps -a  # Tüm konteynerleri listele, hata durumunu anlamaya yardımcı olur
+        docker exec test-container curl http://localhost:8080  # Burada doğru portu kullandığınızdan emin olun
 
   # Dördüncü job: Docker konteynerini durdur ve sil
   clean_up:
