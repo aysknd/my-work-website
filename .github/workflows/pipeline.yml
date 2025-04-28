@@ -32,23 +32,37 @@ jobs:
       run: |
         docker run -d --name test-container -p 8080:8080 ayseknd/alistirma:testinium.v2
 
-  # İkinci job: Konteynerin çalışıp çalışmadığını test et
-  wait_for_container:
+  # İkinci job: Konteynerin başlatıldığını doğrulamak için hazır olup olmadığını kontrol et
+  test_container_ready:
     runs-on: ubuntu-latest
     needs: pull_and_run  # pull_and_run job'ının tamamlanmasını bekler
 
     steps:
     - name: Wait for container to be ready
       run: |
-        docker ps -q -f "name=test-container" 
-  # Üçüncü job: Konteyneri test et
+        # Konteynerin başlatıldığını kontrol et
+        timeout=0
+        while ! docker ps -q -f name=test-container; do
+          if [ $timeout -ge 60 ]; then
+            echo "Konteyner başlatılamadı! Zaman aşımı."
+            exit 1
+          fi
+          echo "Konteyner henüz başlatılmadı, tekrar deneniyor..."
+          docker ps -a 
+          sleep 5  
+          timeout=$((timeout + 5))
+        done
+        echo "Konteyner başarıyla başlatıldı!"
+
+  # Üçüncü job: Konteynerin çalışıp çalışmadığını test et
   test_container:
     runs-on: ubuntu-latest
-    needs: wait_for_container  # wait_for_container job'ının tamamlanmasını bekler
+    needs: test_container_ready  # test_container_ready job'ının tamamlanmasını bekler
 
     steps:
     - name: Test Docker Container
       run: |
+        docker ps -a  
         docker exec test-container curl http://localhost:8080  
 
   # Dördüncü job: Docker konteynerini durdur ve sil
